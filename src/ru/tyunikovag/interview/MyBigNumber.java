@@ -1,5 +1,8 @@
 package ru.tyunikovag.interview;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 interface BigNumber extends Comparable {
     BigNumber add(BigNumber bigNumber);
 
@@ -33,29 +36,17 @@ public class MyBigNumber implements BigNumber {
         String s2;
         if (this.value.length() >= another.value.length()) {
             s1 = this.value;
-            s2 = another.value;
+            s2 = String.format("%" + s1.length() + "s", another.value).replace(' ', '0');
         } else {
             s1 = another.value;
-            s2 = this.value;
+            s2 = String.format("%0" + s1.length() + "s", this.value).replace(' ', '0');
         }
         StringBuilder result = new StringBuilder();
-        int diff = s1.length() - s2.length();
         int rem = 0;
-        for (int i = s1.length() - 1; i >= diff; i--) {
+        for (int i = s1.length() - 1; i >= 0; i--) {
             int n1 = Character.getNumericValue(s1.charAt(i));
-            int n2 = Character.getNumericValue(s2.charAt(i - diff));
+            int n2 = Character.getNumericValue(s2.charAt(i));
             String r = String.valueOf(n1 + n2 + rem);
-            if (r.length() == 2) {
-                result.append(r.charAt(1));
-                rem = Character.getNumericValue(r.charAt(0));
-            } else {
-                result.append(r);
-                rem = 0;
-            }
-        }
-        for (int i = s1.length() + 1 - diff; i >= 0 ; i--) {
-            int n1 = Character.getNumericValue(s1.charAt(i));
-            String r = String.valueOf(n1 + rem);
             if (r.length() == 2) {
                 result.append(r.charAt(1));
                 rem = Character.getNumericValue(r.charAt(0));
@@ -70,7 +61,38 @@ public class MyBigNumber implements BigNumber {
 
     @Override
     public BigNumber sub(BigNumber bigNumber) {
-        return null;
+        MyBigNumber another;
+        try {
+            another = (MyBigNumber) bigNumber;
+        } catch (ClassCastException exception) {
+            throw new IllegalArgumentException("Another number do not contain a value String");
+        }
+        String s1;
+        String s2;
+        if (compareByModule(another) >= 0) {
+            s1 = this.value;
+            s2 = String.format("%" + s1.length() + "s", another.value).replace(' ', '0');
+        } else {
+            s1 = another.value;
+            s2 = String.format("%" + s1.length() + "s", this.value).replace(' ', '0');
+        }
+        StringBuilder result = new StringBuilder();
+        int rem = 0;
+        for (int i = s1.length() - 1; i >= 0; i--) {
+            int n1 = Character.getNumericValue(s1.charAt(i));
+            int n2 = Character.getNumericValue(s2.charAt(i));
+            if (n1 - rem >= n2) {
+                int m = n1 - rem - n2;
+                result.append(m);
+                rem = 0;
+            } else {
+                int m = n1 - rem + 10 - n2;
+                result.append(m);
+                rem = 1;
+            }
+        }
+        result.reverse();
+        return new MyBigNumber(result.toString());
     }
 
     @Override
@@ -79,35 +101,36 @@ public class MyBigNumber implements BigNumber {
         if (this.sign == '-' && another.sign == '+') return -1;
         if (this.sign == '+' && another.sign == '-') return 1;
         if (this.sign == '-' && another.sign == '-') {
-            if (another.value.length() != this.value.length()) {
-                return another.value.length() - this.value.length();
-            } else {
-                for (int i = 0; i < this.value.length(); i++) {
-                    if (this.value.charAt(i) != another.value.charAt(i)) {
-                        return another.value.charAt(i) - this.value.charAt(i);
-                    }
-                }
-            }
+            return -compareByModule(another);
         }
         if (this.sign == '+' && another.sign == '+') {
-            if (another.value.length() != this.value.length()) {
-                return this.value.length() - another.value.length();
-            } else {
-                for (int i = 0; i < this.value.length(); i++) {
-                    if (this.value.charAt(i) != another.value.charAt(i)) {
-                        return this.value.charAt(i) - another.value.charAt(i);
-                    }
+            return compareByModule(another);
+        }
+        return 0;
+    }
+
+    private int compareByModule(MyBigNumber another) {
+        if (another.value.length() != this.value.length()) {
+            return this.value.length() - another.value.length();
+        } else {
+            for (int i = 0; i < this.value.length(); i++) {
+                if (this.value.charAt(i) != another.value.charAt(i)) {
+                    return this.value.charAt(i) - another.value.charAt(i);
                 }
             }
         }
         return 0;
     }
 
+    @Override
+    public String toString() {
+        return sign + value;
+    }
+
     public static void main(String[] args) {
-//        System.out.println(new Integer(-100).compareTo(new Integer(-100)));
-        MyBigNumber b1 = new MyBigNumber("456789");
-        MyBigNumber b2 = new MyBigNumber("89");
-        b1.add(b2);
+//        System.out.println(new Integer(-100).compareTo(new Integer(-500)));
+        MyBigNumber b1 = new MyBigNumber("-100");
+        MyBigNumber b2 = new MyBigNumber("-500");
         System.out.println(b1.compareTo(b2));
     }
 }
