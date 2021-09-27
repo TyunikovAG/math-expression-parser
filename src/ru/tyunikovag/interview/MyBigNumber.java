@@ -24,23 +24,17 @@ public class MyBigNumber implements BigNumber {
         }
     }
 
-    @Override
-    public BigNumber add(BigNumber bigNumber) {
-        MyBigNumber another;
-        try {
-            another = (MyBigNumber) bigNumber;
-        } catch (ClassCastException exception) {
-            throw new IllegalArgumentException("Another number do not contain a value String");
-        }
+    private String addByModule(MyBigNumber another) {
         String s1;
         String s2;
-        if (this.value.length() >= another.value.length()) {
+        if (compareByModule(another) >= 0) {
             s1 = this.value;
-            s2 = String.format("%" + s1.length() + "s", another.value).replace(' ', '0');
+            s2 = fillByZeros(another, s1);
         } else {
             s1 = another.value;
-            s2 = String.format("%0" + s1.length() + "s", this.value).replace(' ', '0');
+            s2 = fillByZeros(this, s1);
         }
+
         StringBuilder result = new StringBuilder();
         int rem = 0;
         for (int i = s1.length() - 1; i >= 0; i--) {
@@ -56,25 +50,18 @@ public class MyBigNumber implements BigNumber {
             }
         }
         result.reverse();
-        return new MyBigNumber(result.toString());
+        return removeLeadZeros(result.toString());
     }
 
-    @Override
-    public BigNumber sub(BigNumber bigNumber) {
-        MyBigNumber another;
-        try {
-            another = (MyBigNumber) bigNumber;
-        } catch (ClassCastException exception) {
-            throw new IllegalArgumentException("Another number do not contain a value String");
-        }
+    private String subByModule(MyBigNumber another) {
         String s1;
         String s2;
         if (compareByModule(another) >= 0) {
             s1 = this.value;
-            s2 = String.format("%" + s1.length() + "s", another.value).replace(' ', '0');
+            s2 = fillByZeros(another, s1);
         } else {
             s1 = another.value;
-            s2 = String.format("%" + s1.length() + "s", this.value).replace(' ', '0');
+            s2 = fillByZeros(this, s1);
         }
         StringBuilder result = new StringBuilder();
         int rem = 0;
@@ -92,7 +79,51 @@ public class MyBigNumber implements BigNumber {
             }
         }
         result.reverse();
-        return new MyBigNumber(result.toString());
+        return removeLeadZeros(result.toString());
+    }
+
+    public static String removeLeadZeros(String s) {
+        if (!s.contains("0")) {
+            return s;
+        } else {
+            int pos = s.length() - 1;
+            for (int i = 0; i < s.length(); i++) {
+                if (s.charAt(i) != '0') {
+                    pos = i;
+                    break;
+                }
+            }
+            return s.substring(pos);
+        }
+    }
+
+    @Override
+    public BigNumber add(BigNumber bigNumber) {
+        MyBigNumber another = castToMyBigNumber(bigNumber);
+        if (this.sign == another.sign) {
+            String s = addByModule(another);
+            if (s.equals("0")) {
+                return new MyBigNumber("0");
+            } else {
+                return new MyBigNumber(this.sign + s);
+            }
+        } else {
+            String s = subByModule(another);
+            if (s.equals("0")) {
+                return new MyBigNumber("0");
+            } else {
+                char sign = this.compareByModule(another) >= 0 ? this.sign : another.sign;
+                return new MyBigNumber(sign + s);
+            }
+        }
+    }
+
+    @Override
+    public BigNumber sub(BigNumber bigNumber) {
+        MyBigNumber another = castToMyBigNumber(bigNumber);
+        char sign = another.sign == '+' ? '-' : '+';
+        MyBigNumber arg = new MyBigNumber(sign + another.value);
+        return (add(arg));
     }
 
     @Override
@@ -122,15 +153,28 @@ public class MyBigNumber implements BigNumber {
         return 0;
     }
 
+    private MyBigNumber castToMyBigNumber(BigNumber bigNumber) {
+        try {
+            return (MyBigNumber) bigNumber;
+        } catch (ClassCastException exception) {
+            throw new IllegalArgumentException("Another number do not contain a value String");
+        }
+    }
+
+    private String fillByZeros(MyBigNumber another, String s1) {
+        return String.format("%" + s1.length() + "s", another.value).replace(' ', '0');
+    }
+
     @Override
     public String toString() {
-        return sign + value;
+        return sign == '+' ? value : sign + value;
     }
 
     public static void main(String[] args) {
 //        System.out.println(new Integer(-100).compareTo(new Integer(-500)));
-        MyBigNumber b1 = new MyBigNumber("-100");
-        MyBigNumber b2 = new MyBigNumber("-500");
+        MyBigNumber b1 = new MyBigNumber("-38027450742057608221309764383410169802626");
+        MyBigNumber b2 = new MyBigNumber("-38027450742057608221309764383410169802626");
+        b1.sub(b2);
         System.out.println(b1.compareTo(b2));
     }
 }
